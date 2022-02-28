@@ -1,0 +1,29 @@
+#!/bin/bash
+
+#this script is used to automatically download all videos in Freetube's "favourites" playlist
+#note to self: when FreeTube finally implements full playlist functionality, this script _will_ break; keep that in mind
+
+#temporary directory to keep things organized
+mkdir temp || exit
+cd ./temp || exit
+
+#copies the playlists file over
+cp ~/.config/FreeTube/playlists.db ./step0
+
+#this mass of sed commands picks out the youtube video-ids from the json format
+sed '2d' step0 > step1
+sed 's/},{/}\n{/g' step1 > step2
+sed 's/"videoId":"//g' step2 > step3
+sed 's/{"playlistName":"Favorites","videos":\[//g' step3 > step4
+sed 's/".*$//g' step4 > step5
+sed 's/{//' step5 > final
+
+#passing the video-ids to an xargs command to download them
+xargs -n 1 -I{} youtube-dl https://youtu.be/{} -x --audio-format mp3 -o '/mnt/data/Downloads/yt-dl/%(uploader)s/%(title)s.%(ext)s' < final
+
+
+#cleaning up
+cd ..
+rm -r ./temp
+rm ~/.config/FreeTube/playlists.db
+
